@@ -30,6 +30,9 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+# files contains Python redinifition of various important Windows structures
+# such as PEB and PE header fields
+
 import ctypes
 import platform
 
@@ -107,6 +110,9 @@ LPWSTR = PWSTR
 UCHAR  = ctypes.c_ubyte
 PUCHAR = ctypes.POINTER(ctypes.c_ubyte)
 
+CHAR_ARR = lambda size: ctypes.create_string_buffer(size)
+WCHAR_ARR = lambda size: ctypes.create_unicode_buffer(size)
+
 HANDLE    = ctypes.c_void_p
 LPHANDLE  = PHANDLE  = ctypes.POINTER(HANDLE)
 HMODULE   = HANDLE
@@ -122,6 +128,9 @@ SE_SIGNING_LEVEL  = ULONG
 PSE_SIGNING_LEVEL = ctypes.POINTER(ULONG)
 
 NTSTATUS  = ctypes.c_uint32
+
+# contants
+MAX_PATH = 260
 
 # platform specific data primitives
 if is_64bit:
@@ -450,6 +459,25 @@ class PROCESS_BASIC_INFORMATION(common.MayhemStructure):
 		('Reserved3', ctypes.c_void_p),
 	]
 PPROCESS_BASIC_INFORMATION = ctypes.POINTER(PROCESS_BASIC_INFORMATION)
+
+class PROCESSENTRY32(common.MayhemStructure):
+	"""
+	https://docs.microsoft.com/en-us/windows/desktop/api/tlhelp32/ns-tlhelp32-tagprocessentry32
+	"""
+	_fields_ = [
+		('dwSize', DWORD),
+		('cntUsage', DWORD),
+		('th32ProcessID', DWORD),
+		('th32DefaultHeapID', PULONG),
+		('th32ModuleID', DWORD),
+		('cntThreads', DWORD),
+		('th32ParentProcessID', DWORD),
+		('pcPriClassBase', LONG),
+		('dwFlags', DWORD),
+		# ('szExeFile', DWORD)
+		('szExeFile', ctypes.c_char*MAX_PATH)
+	]
+PPROCESSENTRY32 = ctypes.POINTER(PROCESSENTRY32)
 
 class SECURITY_ATTRIBUTES(common.MayhemStructure):
 	"""see:

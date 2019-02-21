@@ -195,6 +195,15 @@ CreateThread = _patch_winfunctype(
 	)
 )
 
+CreateToolhelp32Snapshot = _patch_winfunctype(
+	_kernel32.CreateToolhelp32Snapshot,
+	wintypes.HANDLE,
+	(
+		wintypes.DWORD,
+		wintypes.DWORD
+	)
+)
+
 # https://msdn.microsoft.com/en-us/library/windows/desktop/ms724251(v=vs.85).aspx
 DuplicateHandle = _patch_winfunctype(
 	_kernel32.DuplicateHandle,
@@ -387,6 +396,12 @@ OpenThread = _patch_winfunctype(
 	(wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
 )
 
+Process32Next = _patch_winfunctype(
+	_kernel32.Process32Next,
+	wintypes.BOOL,
+	(wintypes.HANDLE, wintypes.PPROCESSENTRY32)
+)
+
 # https://msdn.microsoft.com/en-us/library/windows/desktop/aa365467(v=vs.85).aspx
 ReadFile = _patch_winfunctype(
 	_kernel32.ReadFile,
@@ -481,4 +496,7 @@ WriteProcessMemory = _patch_winfunctype(
 	(wintypes.HANDLE, wintypes.LPVOID, wintypes.LPVOID, wintypes.SIZE_T, wintypes.PSIZE_T)
 )
 
+# import pdb
+# pdb.set_trace()
+# print GetModuleHandleW.address
 address = GetModuleHandleW('kernel32.dll')

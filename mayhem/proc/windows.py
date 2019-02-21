@@ -99,7 +99,15 @@ CONSTANTS = {
 	'FILE_SHARE_WRITE': 0x00000002,
 	'FILE_SHARE_DELETE': 0x00000004,
 
-	'FILE_FLAG_OVERLAPPED': 0x40000000
+	'FILE_FLAG_OVERLAPPED': 0x40000000,
+
+	# https://docs.microsoft.com/en-us/windows/desktop/api/tlhelp32/nf-tlhelp32-createtoolhelp32snapshot
+	'TH32CS_INHERIT': 0x80000000,
+	'TH32CS_SNAPHEAPLIST': 0x00000001,
+	'TH32CS_SNAPMODULE': 0x00000008,
+	'TH32CS_SNAPMODULE32' : 0x00000010,
+	'TH32CS_SNAPPROCESS' : 0x00000002,
+	'TH32CS_SNAPTHREAD' : 0x00000004
 }
 
 IMAGE_DIRECTORY_ENTRY_EXPORT = 0
@@ -108,6 +116,19 @@ IMAGE_DIRECTORY_ENTRY_RESOURCE = 2
 IMAGE_DIRECTORY_ENTRY_BASERELOC = 5
 IMAGE_DIRECTORY_ENTRY_DEBUG = 6
 IMAGE_DIRECTORY_ENTRY_TLS = 9
+
+def get_pid_from_name(proc_name):
+	pid = 0
+	handle = m_k32.CreateToolhelp32Snapshot(flags("TH32CS_SNAPPROCESS"), 0)
+	process_info = wintypes.PROCESSENTRY32()
+	process_info.dwSize	= ctypes.sizeof(process_info)
+	while(m_k32.Process32Next(handle, ctypes.byref(process_info))):
+		print process_info.szExeFile
+		if process_info.szExeFile == proc_name:
+			pid = process_info.th32ProcessID
+			break
+	return pid
+
 
 class WindowsProcessError(ProcessError):
 	def __init__(self, *args, **kwargs):
@@ -131,6 +152,7 @@ def flags(flags):
 	for part in flags:
 		if part in CONSTANTS:
 			part = CONSTANTS[part]
+			# print "part:{}".format(part)
 		elif part in supported_operators:
 			last_operator = part
 			continue
@@ -139,6 +161,7 @@ def flags(flags):
 		if last_operator is None:
 			parsed_flags = part
 		else:
+			# print "parsed flags: ".format(parsed_flags)
 			parsed_flags = eval(str(parsed_flags) + last_operator + str(part))
 	return parsed_flags
 

@@ -92,4 +92,4 @@ if hasattr(_ntdll, 'NtSetCachedSigningLevel'):
 		)
 	)
 
-address = m_k32.GetModuleHandleW('ntdll.dll')
+# address = m_k32.GetModuleHandleW('ntdll.dll')

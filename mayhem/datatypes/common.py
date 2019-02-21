@@ -37,7 +37,7 @@ import ctypes
 _function_cache = {}
 _function_cache_entry = collections.namedtuple('FunctionCacheEntry', ('restype', 'argtypes', 'flags'))
 
-class MayhemCFuncPtr(_ctypes.CFuncPtr):
+class MayhemCFuncPtr(ctypes._CFuncPtr):
 	_argtypes_ = ()
 	_restype_ = None
 	_flags_ = 0
@@ -65,17 +65,41 @@ class MayhemCFuncPtr(_ctypes.CFuncPtr):
 class MayhemStructure(ctypes.Structure):
 	pass
 
-# defined here so it can use the function cache
-def _WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False):
-	flags = _ctypes.FUNCFLAG_STDCALL
-	if use_errno:
-		flags |= _ctypes.FUNCFLAG_USE_ERRNO
-	if use_last_error:
-		flags |= _ctypes.FUNCFLAG_USE_LASTERROR
-	cache_entry = _function_cache_entry(restype=restype, argtypes=argtypes, flags=flags)
-	function = _function_cache.get(cache_entry)
-	if function is not None:
-		return function
-	FunctionType = MayhemCFuncPtr.new('CFunctionType', **cache_entry._asdict())
-	_function_cache[cache_entry] = FunctionType
-	return FunctionType
+# why is this even wrong
+# def _WINFUNCTYPE(restype, use_errno=False, use_last_error=False, *argtypes):
+# 	flags = _ctypes.FUNCFLAG_STDCALL
+# 	if use_errno:
+# 		flags |= _ctypes.FUNCFLAG_USE_ERRNO
+# 	if use_last_error:
+# 		flags |= _ctypes.FUNCFLAG_USE_LASTERROR
+# 	cache_entry = _function_cache_entry(restype=restype, argtypes=argtypes, flags=flags)
+# 	function = _function_cache.get(cache_entry)
+# 	if function is not None:
+# 		return function
+# 	FunctionType = MayhemCFuncPtr.new('CFunctionType', **cache_entry._asdict())
+# 	_function_cache[cache_entry] = FunctionType
+# 	# print type(FunctionType)
+# 	# print FunctionType.__class__
+# 	return FunctionType
+
+# ripped from https://github.com/debasishm89/OpenXMolar/blob/master/ExtDepLibs/winappdbg/win32/__init__.py
+def _WINFUNCTYPE(restype, *argtypes, **kw):
+        flags = ctypes._FUNCFLAG_STDCALL
+        if kw.pop("use_errno", False):
+            flags |= ctypes._FUNCFLAG_USE_ERRNO
+        if kw.pop("use_last_error", False):
+            flags |= ctypes._FUNCFLAG_USE_LASTERROR
+        if kw:
+            raise ValueError("unexpected keyword argument(s) %s" % kw.keys())
+        try:
+            return ctypes._win_functype_cache[(restype, argtypes, flags)]
+        except KeyError:
+			class WinFunctionType(ctypes._CFuncPtr):
+				_argtypes_ = argtypes
+				_restype_ = restype
+				_flags_ = flags
+				@property
+				def address(self):
+					return ctypes.cast(self, ctypes.c_void_p).value
+			ctypes._win_functype_cache[(restype, argtypes, flags)] = WinFunctionType
+			return WinFunctionType 

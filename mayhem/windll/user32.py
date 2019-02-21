@@ -51,4 +51,4 @@ MessageBoxW = m_k32._patch_winfunctype(
 	(wintypes.HWND, wintypes.LPWSTR, wintypes.LPWSTR, wintypes.UINT)
 )
 
-address = m_k32.GetModuleHandleW('user32.dll')
+# address = m_k32.GetModuleHandleW('user32.dll')
